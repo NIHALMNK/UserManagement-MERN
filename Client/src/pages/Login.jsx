@@ -1,8 +1,10 @@
 import React, { useState } from "react";
-import axios from "axios";
+import axios from "../utils/axiosInstance.js";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { logInSuccess } from "../redux/userSlice";
+
+
 
 function Login() {
   const navigate = useNavigate();
@@ -64,14 +66,15 @@ function Login() {
     if (!validateForm()) return;
 
     try {
-      const res = await axios.post("/api/login", formData);
+      const res = await axios.post("/users/login", formData);
         const {token ,user}=res.data;
-
+        console.log("---->"+res);
+        
       localStorage.setItem("token", token);
 
         dispatch(logInSuccess({user,token}))
 
-    //   alert("Login successful!");
+   
       navigate("/profile");
     } catch (err) {
       alert("Login failed. Please check your credentials.");

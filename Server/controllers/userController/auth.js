@@ -49,6 +49,8 @@ export const registerUser = async (req, res) => {
 
 
 export const loginUser = async (req, res) => {
+    console.log("--->");
+    
     const { email, password } = req.body;
     try {
         if (!email || !password) return res.status(401).json({ message: "please enter all fields...." });

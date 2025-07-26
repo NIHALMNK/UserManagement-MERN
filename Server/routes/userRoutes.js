@@ -5,9 +5,9 @@ import { protect } from '../Middleware/authMiddleware.js'
 import { setProfile } from '../controllers/userController/PagesController.js'
 
 router.post("/register",registerUser)
-router.get("/register",registerUser)
-router.get("/login",loginUser)
+
 router.post("/login",loginUser)
+
 router.get('/profile',protect,setProfile )
 
 export default router

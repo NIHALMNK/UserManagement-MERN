@@ -1,7 +1,9 @@
 import axios from "axios";
 import React, { useState } from "react";
+import { useNavigate  } from "react-router-dom";
 
 function Register() {
+    const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -37,18 +39,23 @@ function Register() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (event) => {
+  const  handleSubmit = async (event) => {
     event.preventDefault();
     if (!validation()) return;
 
     try {
-      const response = await axios.post("/api/register", formData);
+      const response =await axios.post("/api/users/register", formData);
       alert("Registered successfully!");
-      console.log(response.data);
+      navigate('/login')
     } catch (err) {
-      alert("Registration failed.");
-      console.error(err);
-    }
+  if (err.response && err.response.data && err.response.data.message) {
+    setErrors({ backend: err.response.data.message });
+    alert(err.response.data.message) 
+  } else {
+    setErrors({ backend: "Something went wrong. Please try again." });
+    alert("Something went wrong. Please try again.")
+}
+}
   };
 
   return (
