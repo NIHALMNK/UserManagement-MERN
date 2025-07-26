@@ -1,23 +1,21 @@
 
 
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
-import './App.css'
-import Login from './pages/Login'
-import Register from './pages/Register'
-import Profile from './pages/Profile'
+import { BrowserRouter} from 'react-router-dom'
+import './App.css';
+import { Provider } from 'react-redux'
+import AppRoutes from './routes/AppRoutes.jsx'
+import store from './redux/store.js'
 
 function App() {
  
 
   return (
     <>
+    <Provider store={store}>
      <BrowserRouter>
-     <Routes>
-      <Route path='/login' element={<Login/>}/>
-      <Route path='/register' element={<Register/>}/>
-      <Route path='/profile' element={<Profile/>}/>
-     </Routes>
+     <AppRoutes/>
      </BrowserRouter>
+     </Provider>
     </>
   )
 }
