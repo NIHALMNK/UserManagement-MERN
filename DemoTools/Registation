@@ -1,0 +1,550 @@
+import React, { useState, useEffect } from "react";
+import { Eye, EyeOff, User, Mail, Lock, CheckCircle, AlertCircle, Check, X, Shield } from "lucide-react";
+
+function Register() {
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [successMsg, setSuccessMsg] = useState("");
+  const [serverErrorMsg, setServerErrorMsg] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState({
+    score: 0,
+    feedback: "",
+    checks: {
+      length: false,
+      lowercase: false,
+      uppercase: false,
+      number: false,
+      special: false,
+    }
+  });
+
+  const calculatePasswordStrength = (password) => {
+    let score = 0;
+    let feedback = "";
+    const checks = {
+      length: password.length >= 8,
+      lowercase: /[a-z]/.test(password),
+      uppercase: /[A-Z]/.test(password),
+      number: /\d/.test(password),
+      special: /[^A-Za-z0-9]/.test(password),
+    };
+
+    Object.values(checks).forEach(check => {
+      if (check) score += 1;
+    });
+
+    if (password.length >= 12) score += 1;
+
+    switch (score) {
+      case 0:
+      case 1:
+        feedback = "Very Weak";
+        break;
+      case 2:
+        feedback = "Weak";
+        break;
+      case 3:
+        feedback = "Fair";
+        break;
+      case 4:
+        feedback = "Good";
+        break;
+      case 5:
+        feedback = "Strong";
+        break;
+      case 6:
+        feedback = "Very Strong";
+        break;
+      default:
+        feedback = "Weak";
+    }
+
+    return { score, feedback, checks };
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Clear errors for this field when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: "" }));
+    }
+    
+    setSuccessMsg("");
+    setServerErrorMsg("");
+
+    // Real-time password strength calculation
+    if (name === "password") {
+      setPasswordStrength(calculatePasswordStrength(value));
+    }
+
+    // Real-time password match validation
+    if (name === "confirmPassword" || (name === "password" && formData.confirmPassword)) {
+      const passwordToCheck = name === "password" ? value : formData.password;
+      const confirmPasswordToCheck = name === "confirmPassword" ? value : formData.confirmPassword;
+      
+      if (confirmPasswordToCheck && passwordToCheck !== confirmPasswordToCheck) {
+        setErrors(prev => ({ ...prev, confirmPassword: "Passwords do not match" }));
+      } else if (errors.confirmPassword === "Passwords do not match") {
+        setErrors(prev => ({ ...prev, confirmPassword: "" }));
+      }
+    }
+  };
+
+  const handleBlur = (e) => {
+    const { name } = e.target;
+    setTouched(prev => ({ ...prev, [name]: true }));
+    
+    // Validate field on blur
+    validateField(name, formData[name]);
+  };
+
+  const validateField = (fieldName, value) => {
+    const newErrors = { ...errors };
+
+    switch (fieldName) {
+      case "name":
+        if (!value.trim()) {
+          newErrors.name = "Name is required";
+        } else if (value.trim().length < 2) {
+          newErrors.name = "Name must be at least 2 characters";
+        } else if (!/^[a-zA-Z\s'-]+$/.test(value.trim())) {
+          newErrors.name = "Name can only contain letters, spaces, hyphens, and apostrophes";
+        } else if (value.trim().length > 50) {
+          newErrors.name = "Name must be less than 50 characters";
+        } else {
+          delete newErrors.name;
+        }
+        break;
+
+      case "email":
+        if (!value.trim()) {
+          newErrors.email = "Email is required";
+        } else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(value)) {
+          newErrors.email = "Please enter a valid email address";
+        } else if (value.length > 254) {
+          newErrors.email = "Email address is too long";
+        } else {
+          delete newErrors.email;
+        }
+        break;
+
+      case "password":
+        if (!value.trim()) {
+          newErrors.password = "Password is required";
+        } else {
+          const passwordIssues = [];
+          if (value.length < 8) passwordIssues.push("at least 8 characters");
+          if (!/[a-z]/.test(value)) passwordIssues.push("one lowercase letter");
+          if (!/[A-Z]/.test(value)) passwordIssues.push("one uppercase letter");
+          if (!/\d/.test(value)) passwordIssues.push("one number");
+          if (!/[^A-Za-z0-9]/.test(value)) passwordIssues.push("one special character");
+          
+          if (passwordIssues.length > 0) {
+            newErrors.password = `Password must contain ${passwordIssues.join(", ")}`;
+          } else if (value.length > 128) {
+            newErrors.password = "Password must be less than 128 characters";
+          } else {
+            delete newErrors.password;
+          }
+        }
+        break;
+
+      case "confirmPassword":
+        if (!value.trim()) {
+          newErrors.confirmPassword = "Please confirm your password";
+        } else if (value !== formData.password) {
+          newErrors.confirmPassword = "Passwords do not match";
+        } else {
+          delete newErrors.confirmPassword;
+        }
+        break;
+    }
+
+    setErrors(newErrors);
+    return !newErrors[fieldName];
+  };
+
+  const validation = () => {
+    const fields = ["name", "email", "password", "confirmPassword"];
+    let isValid = true;
+
+    fields.forEach(field => {
+      const fieldValid = validateField(field, formData[field]);
+      if (!fieldValid) isValid = false;
+    });
+
+    // Mark all fields as touched to show errors
+    setTouched({
+      name: true,
+      email: true,
+      password: true,
+      confirmPassword: true,
+    });
+
+    return isValid;
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setSuccessMsg("");
+    setServerErrorMsg("");
+    
+    if (!validation()) return;
+
+    setLoading(true);
+    try {
+      // Simulating API call with potential errors
+      await new Promise((resolve, reject) => {
+        setTimeout(() => {
+          // Simulate random server errors for demo
+          if (Math.random() < 0.2) {
+            reject(new Error("Email already exists"));
+          } else {
+            resolve();
+          }
+        }, 2000);
+      });
+      
+      setSuccessMsg("🎉 Registration successful! Welcome aboard!");
+      setFormData({
+        name: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+      });
+      setPasswordStrength({ 
+        score: 0, 
+        feedback: "",
+        checks: {
+          length: false,
+          lowercase: false,
+          uppercase: false,
+          number: false,
+          special: false,
+        }
+      });
+      setTouched({});
+      setErrors({});
+    } catch (error) {
+      if (error.message === "Email already exists") {
+        setServerErrorMsg("This email is already registered. Please use a different email or try signing in.");
+        setErrors(prev => ({ ...prev, email: "Email already exists" }));
+      } else {
+        setServerErrorMsg("Registration failed. Please check your connection and try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getPasswordStrengthColor = () => {
+    if (passwordStrength.score <= 1) return "bg-red-500";
+    if (passwordStrength.score <= 2) return "bg-orange-500";
+    if (passwordStrength.score <= 3) return "bg-yellow-500";
+    if (passwordStrength.score <= 4) return "bg-blue-500";
+    return "bg-green-500";
+  };
+
+  const getPasswordStrengthWidth = () => {
+    return `${(passwordStrength.score / 6) * 100}%`;
+  };
+
+  const getFieldStatus = (fieldName) => {
+    if (!touched[fieldName]) return "neutral";
+    if (errors[fieldName]) return "error";
+    if (formData[fieldName]) return "success";
+    return "neutral";
+  };
+
+  const getFieldBorderClass = (fieldName) => {
+    const status = getFieldStatus(fieldName);
+    switch (status) {
+      case "error":
+        return "border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500";
+      case "success":
+        return "border-green-300 bg-green-50 focus:border-green-500 focus:ring-green-500";
+      default:
+        return "border-gray-300 bg-white hover:border-gray-400 focus:border-blue-500 focus:ring-blue-500";
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden backdrop-blur-sm">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 px-8 py-8">
+            <div className="text-center">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 rounded-full mb-4">
+                <Shield className="w-8 h-8 text-white" />
+              </div>
+              <h2 className="text-3xl font-bold text-white">Create Account</h2>
+              <p className="text-white/90 mt-2">Join our community today</p>
+            </div>
+          </div>
+
+          <div className="px-8 py-8">
+            {/* Success Message */}
+            {successMsg && (
+              <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl animate-pulse">
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="h-6 w-6 text-green-600 animate-bounce" />
+                  <p className="text-green-800 font-semibold">{successMsg}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Error Message */}
+            {serverErrorMsg && (
+              <div className="mb-6 p-4 bg-gradient-to-r from-red-50 to-pink-50 border border-red-200 rounded-xl">
+                <div className="flex items-center gap-3">
+                  <AlertCircle className="h-6 w-6 text-red-600" />
+                  <p className="text-red-800 font-medium">{serverErrorMsg}</p>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-6">
+              {/* Name Field */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Full Name
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    placeholder="Enter your full name"
+                    disabled={loading}
+                    className={`w-full pl-10 pr-12 py-3 border rounded-xl focus:ring-2 transition-all duration-200 ${getFieldBorderClass("name")} ${
+                      loading ? "opacity-50 cursor-not-allowed" : ""
+                    }`}
+                  />
+                  {getFieldStatus("name") === "success" && (
+                    <Check className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-green-500" />
+                  )}
+                  {getFieldStatus("name") === "error" && (
+                    <X className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-red-500" />
+                  )}
+                </div>
+                {errors.name && touched.name && (
+                  <div className="mt-2 text-sm text-red-600 flex items-center gap-2 animate-shake">
+                    <AlertCircle className="h-4 w-4" />
+                    {errors.name}
+                  </div>
+                )}
+              </div>
+
+              {/* Email Field */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Email Address
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    placeholder="Enter your email"
+                    disabled={loading}
+                    className={`w-full pl-10 pr-12 py-3 border rounded-xl focus:ring-2 transition-all duration-200 ${getFieldBorderClass("email")} ${
+                      loading ? "opacity-50 cursor-not-allowed" : ""
+                    }`}
+                  />
+                  {getFieldStatus("email") === "success" && (
+                    <Check className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-green-500" />
+                  )}
+                  {getFieldStatus("email") === "error" && (
+                    <X className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-red-500" />
+                  )}
+                </div>
+                {errors.email && touched.email && (
+                  <div className="mt-2 text-sm text-red-600 flex items-center gap-2 animate-shake">
+                    <AlertCircle className="h-4 w-4" />
+                    {errors.email}
+                  </div>
+                )}
+              </div>
+
+              {/* Password Field */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Password
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    placeholder="Create a strong password"
+                    disabled={loading}
+                    className={`w-full pl-10 pr-12 py-3 border rounded-xl focus:ring-2 transition-all duration-200 ${getFieldBorderClass("password")} ${
+                      loading ? "opacity-50 cursor-not-allowed" : ""
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    disabled={loading}
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
+                
+                {/* Password Strength Indicator */}
+                {formData.password && (
+                  <div className="mt-3 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-gray-600">Password Strength</span>
+                      <span className={`text-xs font-bold ${
+                        passwordStrength.score <= 1 ? "text-red-600" :
+                        passwordStrength.score <= 2 ? "text-orange-600" :
+                        passwordStrength.score <= 3 ? "text-yellow-600" :
+                        passwordStrength.score <= 4 ? "text-blue-600" : "text-green-600"
+                      }`}>
+                        {passwordStrength.feedback}
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                      <div 
+                        className={`h-full rounded-full transition-all duration-500 ease-out ${getPasswordStrengthColor()}`}
+                        style={{ width: getPasswordStrengthWidth() }}
+                      ></div>
+                    </div>
+                    
+                    {/* Password Requirements */}
+                    <div className="grid grid-cols-1 gap-1 text-xs">
+                      {Object.entries({
+                        length: "At least 8 characters",
+                        lowercase: "One lowercase letter",
+                        uppercase: "One uppercase letter", 
+                        number: "One number",
+                        special: "One special character"
+                      }).map(([key, label]) => (
+                        <div key={key} className={`flex items-center gap-2 ${
+                          passwordStrength.checks[key] ? "text-green-600" : "text-gray-500"
+                        }`}>
+                          {passwordStrength.checks[key] ? (
+                            <Check className="h-3 w-3" />
+                          ) : (
+                            <X className="h-3 w-3" />
+                          )}
+                          <span>{label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {errors.password && touched.password && (
+                  <div className="mt-2 text-sm text-red-600 flex items-start gap-2 animate-shake">
+                    <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <span>{errors.password}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Confirm Password Field */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Confirm Password
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    placeholder="Confirm your password"
+                    disabled={loading}
+                    className={`w-full pl-10 pr-12 py-3 border rounded-xl focus:ring-2 transition-all duration-200 ${getFieldBorderClass("confirmPassword")} ${
+                      loading ? "opacity-50 cursor-not-allowed" : ""
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    disabled={loading}
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
+                {formData.confirmPassword && formData.password && formData.confirmPassword === formData.password && (
+                  <div className="mt-2 text-sm text-green-600 flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4" />
+                    Passwords match!
+                  </div>
+                )}
+                {errors.confirmPassword && touched.confirmPassword && (
+                  <div className="mt-2 text-sm text-red-600 flex items-center gap-2 animate-shake">
+                    <AlertCircle className="h-4 w-4" />
+                    {errors.confirmPassword}
+                  </div>
+                )}
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={loading || Object.keys(errors).length > 0}
+                className={`w-full py-4 px-6 rounded-xl font-bold text-white transition-all duration-300 transform ${
+                  loading || Object.keys(errors).length > 0
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-700 hover:via-purple-700 hover:to-pink-700 hover:scale-105 hover:shadow-xl active:scale-95"
+                } shadow-lg`}
+              >
+                {loading ? (
+                  <div className="flex items-center justify-center gap-3">
+                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                    <span>Creating Your Account...</span>
+                  </div>
+                ) : (
+                  <span>Create Account</span>
+                )}
+              </button>
+            </div>
+
+            {/* Footer */}
+            <div className="mt-8 text-center">
+              <p className="text-sm text-gray-600">
+                Already have an account?{" "}
+                <button className="text-indigo-600 hover:text-indigo-700 font-semibold hover:underline transition-colors">
+                  Sign in here
+                </button>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default Register;
