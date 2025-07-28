@@ -4,7 +4,7 @@ import ConnectDB from "./config/dataBase.js";
 import morgan from 'morgan';
 import cors from 'cors'
 import userRouter from './routes/userRoutes.js'
-
+import adminRouter from './routes/adminRoutes.js'
 dotenv.config();
 const app = express();
 app.use(express.json())
@@ -16,6 +16,7 @@ app.use(cors({
 }));
 
 app.use("/api/users",userRouter)
+app.use("/api/admin",adminRouter)
 
 
 //-------------server start---------------->

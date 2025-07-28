@@ -62,13 +62,19 @@ function Profile() {
     return <div className="text-center mt-20">Loading profile...</div>;
   }
 
+
+  //----------------Admin-------------->
+  const handleAdmin=()=>{
+    navigate('/admin/dashboard')
+  }
+
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center p-6">
       <h1 className="text-3xl font-bold text-blue-600 mb-8">Profile</h1>
 
       <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md text-center">
         <img
-          src={form.image}
+          src={form.image || "/default-avatar-icon-of-social-media-user-vector.jpg"}
           alt="Profile"
           className="w-24 h-24 rounded-full mx-auto border-4 border-blue-500"
         />
@@ -76,8 +82,8 @@ function Profile() {
         <p className="text-gray-600">{form.email}</p>
 
         <div className="mt-3">
-          {form.role === "Admin" ? (
-            <button className="bg-blue-600 text-white px-4 py-1 rounded-full text-sm">
+          {form.role === "admin" ? (
+            <button onClick={handleAdmin} className="bg-blue-600 text-white px-4 py-1 rounded-full text-sm">
               Admin
             </button>
           ) : (

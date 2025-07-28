@@ -5,6 +5,7 @@ import Register from '../pages/Register.jsx';
 import Profile from '../pages/Profile.jsx';
 import ProtectedRoute from '../components/ProtectedRoute.jsx';
 import ProfileUpdate from '../pages/ProfileUpdate.jsx';
+import Dashboard from '../pages/Dashboard.jsx';
 
 function AppRoutes() {
 
@@ -15,6 +16,7 @@ function AppRoutes() {
       <Route path='/register' element={<Register/>}/>
       <Route path='/profile' element={ <ProtectedRoute> <Profile/> </ProtectedRoute>}/>
       <Route path='/updateProfile' element={ <ProtectedRoute> <ProfileUpdate/> </ProtectedRoute>}/>
+      <Route path='/admin/dashboard' element={<Dashboard/>}/>
      </Routes>
 
   );
