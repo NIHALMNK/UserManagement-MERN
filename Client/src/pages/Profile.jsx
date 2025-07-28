@@ -1,16 +1,30 @@
 import axios from "../utils/axiosInstance";
 import React, { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { logOut } from "../redux/userSlice";
+
 
 function Profile() {
   const { token } = useSelector((state) => state.user);
-
+  const navigate = useNavigate();
+  const dispatch=useDispatch()
   const [form, setForm] = useState({
     name: null,
     email: null,
     role: null,
     image: null,
   });
+
+  const handleLogout =async()=>{
+    try{
+       dispatch(logOut())
+       if (!token) navigate('/login');
+    }catch(err){
+      console.log("Error logout profile", err);
+      
+    }
+  }
 
   useEffect(() => {
     if (!token) return;
@@ -28,8 +42,10 @@ function Profile() {
           name: user.name,
           email: user.email,
           role: user.role,
-          image: "https://www.gravatar.com/avatar/?d=mp",
+          image:user.image,
         });
+        console.log(user.image);
+        
       } catch (err) {
         console.log("Error fetching profile", err);
       }
@@ -72,10 +88,10 @@ function Profile() {
         </div>
 
         <div className="flex justify-center gap-4 mt-6">
-          <button className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">
+          <button className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600" onClick={()=>navigate('/updateProfile')}>
             Edit Profile
           </button>
-          <button className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">
+          <button onClick={handleLogout} className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">
             Logout
           </button>
         </div>

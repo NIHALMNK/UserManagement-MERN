@@ -3,7 +3,8 @@ import { Route, Routes } from 'react-router-dom'
 import Login from '../pages/Login.jsx';
 import Register from '../pages/Register.jsx';
 import Profile from '../pages/Profile.jsx';
-import ProtectedRoute from '../pages/components/ProtectedRoute.jsx';
+import ProtectedRoute from '../components/ProtectedRoute.jsx';
+import ProfileUpdate from '../pages/ProfileUpdate.jsx';
 
 function AppRoutes() {
 
@@ -13,6 +14,7 @@ function AppRoutes() {
       <Route path='/login' element={<Login/>}/>
       <Route path='/register' element={<Register/>}/>
       <Route path='/profile' element={ <ProtectedRoute> <Profile/> </ProtectedRoute>}/>
+      <Route path='/updateProfile' element={ <ProtectedRoute> <ProfileUpdate/> </ProtectedRoute>}/>
      </Routes>
 
   );

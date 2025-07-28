@@ -2,7 +2,7 @@ import express from 'express'
 const router = express.Router()
 import { loginUser, registerUser } from '../controllers/userController/auth.js'
 import { protect } from '../Middleware/authMiddleware.js'
-import { setProfile } from '../controllers/userController/PagesController.js'
+import { setProfile, updateProfile } from '../controllers/userController/PagesController.js'
 import upload from '../Middleware/upload.js'
 
 router.post("/register",registerUser)
