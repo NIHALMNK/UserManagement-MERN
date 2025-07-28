@@ -3,6 +3,8 @@ import User from "../models/User.js";
 
 export const protect = async (req, res, next) => {
   try {
+    console.log("protect");
+    
     let token;
 
     if (
@@ -17,7 +19,7 @@ export const protect = async (req, res, next) => {
       if (!user)
         return res.status(401).json({ message: "User not available..." });
 
-      req.user = user;
+      req.user = user;      
       next();
     } else {
       return res

@@ -6,9 +6,10 @@ import Profile from '../pages/Profile.jsx';
 import ProtectedRoute from '../components/ProtectedRoute.jsx';
 import ProfileUpdate from '../pages/ProfileUpdate.jsx';
 import Dashboard from '../pages/Dashboard.jsx';
+import useAuthRestore from "../hooks/useAuthRestore";
 
 function AppRoutes() {
-
+useAuthRestore();
   return (
     
     <Routes>

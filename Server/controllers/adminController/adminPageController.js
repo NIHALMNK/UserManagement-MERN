@@ -1,8 +1,10 @@
 import User from '../../models/User.js'
 
 export const getAllUsers = async (req, res) => {
+    console.log("get all user");
+    
   try {
-    const users = await User.find().select("-password"); // exclude password
+    const users = await User.find().select("-password"); 
     res.status(200).json(users);
   } catch (error) {
     console.error("Error fetching users:", error);

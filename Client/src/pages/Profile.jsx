@@ -2,7 +2,7 @@ import axios from "../utils/axiosInstance";
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { logOut } from "../redux/userSlice";
+import { logOut, setUser } from "../redux/userSlice";
 
 
 function Profile() {
@@ -45,7 +45,7 @@ function Profile() {
           image:user.image,
         });
         console.log(user.image);
-        
+        dispatch(setUser(user));
       } catch (err) {
         console.log("Error fetching profile", err);
       }
