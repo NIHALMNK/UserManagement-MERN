@@ -18,6 +18,7 @@ useAuthRestore();
       <Route path='/profile' element={ <ProtectedRoute> <Profile/> </ProtectedRoute>}/>
       <Route path='/updateProfile' element={ <ProtectedRoute> <ProfileUpdate/> </ProtectedRoute>}/>
       <Route path='/admin/dashboard' element={<Dashboard/>}/>
+      
      </Routes>
 
   );

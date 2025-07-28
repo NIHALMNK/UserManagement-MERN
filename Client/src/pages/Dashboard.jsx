@@ -2,14 +2,33 @@ import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import axios from "../utils/axiosInstance";
+import AddUserModal from "../components/AddUserModal";
 
 function Dashboard() {
   const { token, user } = useSelector((state) => state.user);
   const navigate = useNavigate();
 
   const [users, setUsers] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userReady, setUserReady] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showModal, setShowModal] = useState(false);
+
+  // ✅ Move fetchUsers outside so it can be reused
+  const fetchUsers = async () => {
+    try {
+      const res = await axios.get("/admin/dashboard", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUsers(res.data);
+      setFilteredUsers(res.data);
+    } catch (err) {
+      console.error("Error fetching users:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!user || !user.role) {
@@ -24,35 +43,33 @@ function Dashboard() {
       return;
     }
 
-    const fetchUsers = async () => {
-      try {
-        const res = await axios.get("/admin/dashboard", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setUsers(res.data);
-      } catch (err) {
-        console.error("Error fetching users:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchUsers();
   }, [user, token, navigate]);
+
+  useEffect(() => {
+    const filtered = users.filter(
+      (u) =>
+        u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        u.email.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredUsers(filtered);
+  }, [searchTerm, users]);
 
   const handleEdit = (id) => {
     navigate(`/admin/edit-user/${id}`);
   };
 
   const handleDelete = async (id) => {
-    const confirm = window.confirm("Are you sure you want to delete this user?");
+    const confirm = window.confirm(
+      "Are you sure you want to delete this user?"
+    );
     if (!confirm) return;
 
     try {
       await axios.delete(`/admin/delete-user/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setUsers(users.filter((u) => u._id !== id)); // remove from UI
+      setUsers(users.filter((u) => u._id !== id));
       alert("User deleted successfully!");
     } catch (err) {
       console.error("Failed to delete user", err);
@@ -60,13 +77,45 @@ function Dashboard() {
     }
   };
 
-  if (!userReady) return <div className="text-center mt-10 text-lg">Loading user...</div>;
-  if (loading) return <div className="text-center mt-10 text-lg">Loading users...</div>;
+  if (!userReady)
+    return <div className="text-center mt-10 text-lg">Loading user...</div>;
+  if (loading)
+    return <div className="text-center mt-10 text-lg">Loading users...</div>;
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
-      <h1 className="text-3xl font-bold text-blue-700 mb-6 text-center">Admin Dashboard</h1>
+      <h1 className="text-3xl font-bold text-blue-700 mb-6 text-center">
+        Admin Dashboard
+      </h1>
 
+      {/* 🔍 Search + ➕ Add Button */}
+      <div className="mb-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <input
+          type="text"
+          placeholder="Search by name or email"
+          className="p-2 border rounded-md w-full sm:max-w-sm shadow-sm"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+
+        <button
+          onClick={() => setShowModal(true)}
+          className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+        >
+          + Add User
+        </button>
+      </div>
+
+      {/* ✅ AddUserModal with fetchUsers onClose */}
+      <AddUserModal
+        show={showModal}
+        onClose={() => {
+          setShowModal(false);
+          fetchUsers();
+        }}
+      />
+
+      {/* 👥 Users Table */}
       <div className="overflow-x-auto">
         <table className="min-w-full bg-white rounded-lg shadow-md">
           <thead className="bg-blue-600 text-white">
@@ -79,8 +128,11 @@ function Dashboard() {
             </tr>
           </thead>
           <tbody>
-            {users.map((user) => (
-              <tr key={user._id} className="border-b hover:bg-gray-50 transition duration-150">
+            {filteredUsers.map((user) => (
+              <tr
+                key={user._id}
+                className="border-b hover:bg-gray-50 transition duration-150"
+              >
                 <td className="py-3 px-4">
                   <img
                     src={user.image || "/default-avatar.png"}
@@ -110,7 +162,7 @@ function Dashboard() {
           </tbody>
         </table>
 
-        {users.length === 0 && (
+        {filteredUsers.length === 0 && (
           <p className="text-center py-4 text-gray-600">No users found.</p>
         )}
       </div>
