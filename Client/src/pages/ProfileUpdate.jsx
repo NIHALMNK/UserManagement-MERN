@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "../utils/axiosInstance";
 import {  useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
 function ProfileUpdate() {
-  const { token } = useSelector((state) => state.user);
+  const { token ,user} = useSelector((state) => state.user);
   const navigate = useNavigate();
   
 
@@ -54,6 +54,8 @@ function ProfileUpdate() {
       alert("Update failed");
     }
   };
+
+  
 
   return (
     <div className="min-h-screen flex flex-col items-center p-6 bg-gray-100">

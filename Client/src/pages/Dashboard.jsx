@@ -3,6 +3,7 @@ import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import axios from "../utils/axiosInstance";
 import AddUserModal from "../components/AddUserModal";
+import EditUserModal from "../components/EditUserModal";
 
 function Dashboard() {
   const { token, user } = useSelector((state) => state.user);
@@ -14,8 +15,9 @@ function Dashboard() {
   const [userReady, setUserReady] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [editUser, setEditUser] = useState(null);
 
-  // ✅ Move fetchUsers outside so it can be reused
+  // 🔁 Reusable function to fetch users
   const fetchUsers = async () => {
     try {
       const res = await axios.get("/admin/dashboard", {
@@ -30,11 +32,9 @@ function Dashboard() {
     }
   };
 
+  // 🧠 Auth check & data fetch
   useEffect(() => {
-    if (!user || !user.role) {
-      console.log("User not ready:", user);
-      return;
-    }
+    if (!user || !user.role) return;
 
     setUserReady(true);
 
@@ -46,6 +46,7 @@ function Dashboard() {
     fetchUsers();
   }, [user, token, navigate]);
 
+  // 🔍 Filtering
   useEffect(() => {
     const filtered = users.filter(
       (u) =>
@@ -55,10 +56,15 @@ function Dashboard() {
     setFilteredUsers(filtered);
   }, [searchTerm, users]);
 
+  // ✏️ Edit user
   const handleEdit = (id) => {
-    navigate(`/admin/edit-user/${id}`);
+    const userToEdit = users.find((u) => u._id === id);
+    if (userToEdit) {
+      setEditUser(userToEdit);
+    }
   };
 
+  // ❌ Delete user
   const handleDelete = async (id) => {
     const confirm = window.confirm(
       "Are you sure you want to delete this user?"
@@ -66,9 +72,13 @@ function Dashboard() {
     if (!confirm) return;
 
     try {
-      await axios.delete(`/admin/delete-user/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axios.put(
+  `/admin/delete-user/${id}`,
+  {}, 
+  {
+    headers: { Authorization: `Bearer ${token}` },
+  }
+);
       setUsers(users.filter((u) => u._id !== id));
       alert("User deleted successfully!");
     } catch (err) {
@@ -77,6 +87,7 @@ function Dashboard() {
     }
   };
 
+  // 🔃 States
   if (!userReady)
     return <div className="text-center mt-10 text-lg">Loading user...</div>;
   if (loading)
@@ -88,7 +99,7 @@ function Dashboard() {
         Admin Dashboard
       </h1>
 
-      {/* 🔍 Search + ➕ Add Button */}
+      {/* 🔍 Search + ➕ Add User */}
       <div className="mb-4 flex flex-col sm:flex-row justify-between items-center gap-4">
         <input
           type="text"
@@ -97,7 +108,6 @@ function Dashboard() {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
-
         <button
           onClick={() => setShowModal(true)}
           className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
@@ -106,7 +116,7 @@ function Dashboard() {
         </button>
       </div>
 
-      {/* ✅ AddUserModal with fetchUsers onClose */}
+      {/* ➕ AddUser Modal */}
       <AddUserModal
         show={showModal}
         onClose={() => {
@@ -114,6 +124,21 @@ function Dashboard() {
           fetchUsers();
         }}
       />
+
+      {/* ✏️ EditUser Modal */}
+      {editUser && (
+        <EditUserModal
+          isOpen={!!editUser}
+          user={editUser}
+          onClose={() => {
+            setEditUser(null);
+            fetchUsers();
+          }}
+          onUserUpdated={(updatedUser) => {
+            console.log("User updated:", updatedUser);
+          }}
+        />
+      )}
 
       {/* 👥 Users Table */}
       <div className="overflow-x-auto">
@@ -135,9 +160,9 @@ function Dashboard() {
               >
                 <td className="py-3 px-4">
                   <img
-                    src={user.image || "/default-avatar.png"}
+                    src={user.image ? user.image : "/default-avatar-icon-of-social-media-user-vector.jpg"}
                     alt="avatar"
-                    className="w-10 h-10 rounded-full"
+                    className="w-10 h-10 rounded-full object-cover"
                   />
                 </td>
                 <td className="py-3 px-4">{user.name}</td>
@@ -162,6 +187,7 @@ function Dashboard() {
           </tbody>
         </table>
 
+        {/* Empty state */}
         {filteredUsers.length === 0 && (
           <p className="text-center py-4 text-gray-600">No users found.</p>
         )}

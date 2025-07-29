@@ -3,7 +3,7 @@ import User from "../../models/User.js";
 import bcrypt from "bcrypt";
 
 export const registerUser = async (req, res) => {
-    const { name, email, password } = req.body;
+    const { name, email, password,role } = req.body;
 
     try {
         if (!name || !email || !password) {
@@ -20,6 +20,7 @@ export const registerUser = async (req, res) => {
         const newUser = await User.create({
             name,
             email,
+            role,
             password: hashedPassword,
         });
 
